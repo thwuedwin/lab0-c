@@ -152,19 +152,20 @@ bool q_delete_mid(struct list_head *head)
     }
 
     /* find mid */
-    int target = (q_size(head) + 1) / 2;
-    struct list_head *node = head;
-    for (int i = 0; i < target; i++) {
-        node = node->next;
-    }
+    struct list_head *fast, *slow;
+    fast = slow = head;
+    do {
+        slow = slow->next;
+        fast = fast->next->next;
+    } while (fast != head && fast->next != head);
 
     /* connect list */
-    struct list_head *next = node->next, *prev = node->prev;
+    struct list_head *next = slow->next, *prev = slow->prev;
     next->prev = prev;
     prev->next = next;
 
     /* free entry */
-    element_t *element = list_entry(node, element_t, list);
+    element_t *element = list_entry(slow, element_t, list);
     if (!element)
         return false;
     if (element->value)
