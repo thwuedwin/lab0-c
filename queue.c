@@ -286,7 +286,34 @@ void q_sort(struct list_head *head, bool descend) {}
 int q_ascend(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+    if (list_is_singular(head))
+        return 1;
+
+    element_t *entry, *safe;
+    struct list_head *stack_head;
+    entry = safe = NULL;
+    stack_head = head;
+    list_for_each_entry_safe (entry, safe, head, list) {
+        while (stack_head != head &&
+               strcmp(list_entry(stack_head, element_t, list)->value,
+                      entry->value) > 0) {
+            struct list_head *cur = stack_head;
+            stack_head = cur->prev;
+            stack_head->next = NULL;
+            q_release_element(list_entry(cur, element_t, list));
+        }
+        stack_head->next = &entry->list;
+        entry->list.prev = stack_head;
+        entry->list.next = NULL;
+        stack_head = &entry->list;
+    }
+
+    stack_head->next = head;
+    head->prev = stack_head;
+
+    return q_size(head);
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere to
@@ -294,7 +321,34 @@ int q_ascend(struct list_head *head)
 int q_descend(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+    if (list_is_singular(head))
+        return 1;
+
+    element_t *entry, *safe;
+    struct list_head *stack_head;
+    entry = safe = NULL;
+    stack_head = head;
+    list_for_each_entry_safe (entry, safe, head, list) {
+        while (stack_head != head &&
+               strcmp(list_entry(stack_head, element_t, list)->value,
+                      entry->value) < 0) {
+            struct list_head *cur = stack_head;
+            stack_head = cur->prev;
+            stack_head->next = NULL;
+            q_release_element(list_entry(cur, element_t, list));
+        }
+        stack_head->next = &entry->list;
+        entry->list.prev = stack_head;
+        entry->list.next = NULL;
+        stack_head = &entry->list;
+    }
+
+    stack_head->next = head;
+    head->prev = stack_head;
+
+    return q_size(head);
 }
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
