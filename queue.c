@@ -279,7 +279,50 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head)) {
+        return;
+    }
+
+    int size = q_size(head);
+    struct list_head *max_node = NULL, *first_node = head->next, *node = NULL;
+    first_node->prev = head->prev;
+    head->prev->next = first_node;
+    INIT_LIST_HEAD(head);
+    for (int i = 0; i < size; i++) {
+        max_node = first_node;
+        list_for_each (node, first_node) {
+            if (descend) {
+                if (strcmp(list_entry(max_node, element_t, list)->value,
+                           list_entry(node, element_t, list)->value) < 0)
+                    max_node = node;
+            } else {
+                if (strcmp(list_entry(max_node, element_t, list)->value,
+                           list_entry(node, element_t, list)->value) <= 0)
+                    max_node = node;
+            }
+        }
+
+        struct list_head *next_node = first_node->next;
+        list_del_init(max_node);
+        if (max_node == first_node) {
+            first_node = next_node;
+        }
+
+        if (descend) {
+            max_node->next = head;
+            max_node->prev = head->prev;
+            head->prev->next = max_node;
+            head->prev = max_node;
+        } else {
+            max_node->prev = head;
+            max_node->next = head->next;
+            head->next->prev = max_node;
+            head->next = max_node;
+        }
+    }
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
