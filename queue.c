@@ -399,5 +399,69 @@ int q_descend(struct list_head *head)
 int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    if (!head || list_empty(head)) {
+        return 0;
+    }
+    int k = q_size(head);  // number of queue
+    k--;
+    while (k != 0) {
+        k >>= 1;
+        queue_contex_t *entry = NULL, *qctx1 = NULL, *qctx2 = NULL;
+        list_for_each_entry (entry, head, chain) {
+            if (!qctx1 && entry->q) {
+                qctx1 = entry;
+                continue;
+            }
+            if (!entry->q)
+                continue;
+
+            qctx2 = entry;
+            /* merge */
+            struct list_head *l1, *l2, *tmp_head = NULL, *prev = NULL;
+            struct list_head **ptr = &tmp_head, **node;
+            qctx1->q->prev->next = NULL;
+            qctx2->q->prev->next = NULL;
+            l1 = qctx1->q->next, l2 = qctx2->q->next;
+            for (node = NULL; l1 && l2; *node = (*node)->next) {
+                if (descend) {
+                    node = (strcmp(list_entry(l1, element_t, list)->value,
+                                   list_entry(l2, element_t, list)->value) < 0)
+                               ? &l2
+                               : &l1;
+                } else {
+                    node = (strcmp(list_entry(l1, element_t, list)->value,
+                                   list_entry(l2, element_t, list)->value) > 0)
+                               ? &l2
+                               : &l1;
+                }
+                *ptr = *node;
+                (*node)->prev = prev;
+                prev = *node;
+                ptr = &(*ptr)->next;
+            }
+
+            qctx1->q->next = tmp_head;
+            tmp_head->prev = qctx1->q;
+            if (!l1) {
+                *ptr = l2;
+                l2->prev = prev;
+                qctx1->q->prev = qctx2->q->prev;
+                qctx2->q->prev->next = qctx1->q;
+                INIT_LIST_HEAD(qctx2->q);
+            } else {
+                *ptr = l1;
+                l1->prev = prev;
+                qctx1->q->prev->next = qctx1->q;
+                INIT_LIST_HEAD(qctx2->q);
+            }
+
+            /* after merge */
+            qctx1->size += qctx2->size;
+            qctx2->size = 0;
+            qctx2->q = NULL;
+            qctx1 = qctx2 = NULL;
+        }
+    }
+    queue_contex_t *qctx = list_entry(head->next, queue_contex_t, chain);
+    return q_size(qctx->q);
 }
