@@ -402,7 +402,33 @@ int q_merge(struct list_head *head, bool descend)
     if (!head || list_empty(head)) {
         return 0;
     }
-    int k = q_size(head);  // number of queue
+
+    int k = 0;  // number of queue
+    queue_contex_t *e;
+    list_for_each_entry (e, head, chain)
+        k += (list_empty(e->q)) ? 0 : 1;
+
+    if (k == 0)
+        return 0;
+
+    queue_contex_t *qct1, *qct2;
+    qct1 = list_entry(head->next, queue_contex_t, chain);
+    if (list_empty(qct1->q)) {
+        list_for_each_entry (qct2, head, chain)
+            if (!list_empty(qct2->q))
+                break;
+
+        qct1->q->next = qct2->q->next;
+        qct1->q->prev = qct2->q->prev;
+        qct2->q->next->prev = qct1->q;
+        qct2->q->prev->next = qct1->q;
+
+        qct1->size = qct2->size;
+        qct2->size = 0;
+        INIT_LIST_HEAD(qct2->q);
+        qct1 = qct2 = NULL;
+    }
+
     k--;
     while (k != 0) {
         k >>= 1;
@@ -416,6 +442,8 @@ int q_merge(struct list_head *head, bool descend)
                 continue;
 
             qctx2 = entry;
+
+
             /* merge */
             struct list_head *l1, *l2, *tmp_head = NULL, *prev = NULL;
             struct list_head **ptr = &tmp_head, **node;
