@@ -408,11 +408,11 @@ int q_merge(struct list_head *head, bool descend)
         k >>= 1;
         queue_contex_t *entry = NULL, *qctx1 = NULL, *qctx2 = NULL;
         list_for_each_entry (entry, head, chain) {
-            if (!qctx1 && entry->q) {
+            if (!qctx1 && !list_empty(entry->q)) {
                 qctx1 = entry;
                 continue;
             }
-            if (!entry->q)
+            if (list_empty(entry->q))
                 continue;
 
             qctx2 = entry;
@@ -458,7 +458,7 @@ int q_merge(struct list_head *head, bool descend)
             /* after merge */
             qctx1->size += qctx2->size;
             qctx2->size = 0;
-            qctx2->q = NULL;
+            INIT_LIST_HEAD(qctx2->q);
             qctx1 = qctx2 = NULL;
         }
     }
