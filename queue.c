@@ -19,8 +19,10 @@ struct list_head *q_new()
 void q_free(struct list_head *head)
 {
     /* if head is NULL, do nothing */
-    if (!head)
+    if (!head || list_empty(head)) {
+        free(head);
         return;
+    }
 
     /* free element_t nodes and string inside iteratively */
     element_t *entry = NULL, *safe = NULL;
@@ -30,8 +32,6 @@ void q_free(struct list_head *head)
     }
 
     /* connect head->prev and head->next then free head */
-    head->prev->next = head->next;
-    head->next->prev = head->prev;
     free(head);
 }
 
