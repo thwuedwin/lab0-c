@@ -280,6 +280,59 @@ void q_reverseK(struct list_head *head, int k)
     }
 }
 
+struct list_head *forward(struct list_head *head, int step)
+{
+    struct list_head *node = head, *prev;
+    do {
+        prev = node;
+        node = node->next;
+        if (!node)
+            break;
+    } while (--step);
+
+    return prev;
+}
+
+int merge(struct list_head **head,
+          struct list_head *l1,
+          struct list_head *l2,
+          int descend)
+{
+    struct list_head *prev = *head;
+    struct list_head **ptr = &(*head)->next, **node;
+    for (node = NULL; l1 && l2; *node = (*node)->next) {
+        if (descend) {
+            node = (strcmp(list_entry(l1, element_t, list)->value,
+                           list_entry(l2, element_t, list)->value) >= 0)
+                       ? &l1
+                       : &l2;
+        } else {
+            node = (strcmp(list_entry(l1, element_t, list)->value,
+                           list_entry(l2, element_t, list)->value) <= 0)
+                       ? &l1
+                       : &l2;
+        }
+        *ptr = *node;
+        (*node)->prev = prev;
+        prev = *node;
+        ptr = &(*ptr)->next;
+    }
+
+
+
+    if (l1) {
+        *ptr = l1;
+        l1->prev = prev;
+
+        return 1;
+    } else {
+        *ptr = l2;
+        l2->prev = prev;
+
+        return 2;
+    }
+}
+
 /* Sort elements of queue in ascending/descending order */
 void q_sort(struct list_head *head, bool descend)
 {
@@ -287,43 +340,48 @@ void q_sort(struct list_head *head, bool descend)
         return;
     }
 
-    int size = q_size(head);
-    struct list_head *max_node = NULL, *first_node = head->next, *node = NULL;
-    first_node->prev = head->prev;
-    head->prev->next = first_node;
-    INIT_LIST_HEAD(head);
-    for (int i = 0; i < size; i++) {
-        max_node = first_node;
-        list_for_each (node, first_node) {
-            if (descend) {
-                if (strcmp(list_entry(max_node, element_t, list)->value,
-                           list_entry(node, element_t, list)->value) < 0)
-                    max_node = node;
-            } else {
-                if (strcmp(list_entry(max_node, element_t, list)->value,
-                           list_entry(node, element_t, list)->value) <= 0)
-                    max_node = node;
+    int step = 1;
+    int n = q_size(head) - 1;
+    head->prev->next = NULL;
+    for (; n != 0; n >>= 1, step <<= 1) {
+        // maintain only single direction
+        struct list_head *l1, *l2, *before, *after, *l1_tail, *l2_tail;
+        before = head;
+        while (1) {
+            l1 = before->next;
+            if (!l1)
+                break;
+            l1_tail = forward(l1, step);  // make sure forward won't return NULL
+            l2 = l1_tail->next;
+            if (!l2)
+                break;
+            l2_tail = forward(l2, step);
+            after = l2_tail->next;
+            l1_tail->next = NULL;
+            l2_tail->next = NULL;
+
+            int end_with = merge(&before, l1, l2, descend);
+            if (!after) {
+                break;
             }
-        }
 
-        struct list_head *next_node = first_node->next;
-        list_del_init(max_node);
-        if (max_node == first_node) {
-            first_node = next_node;
-        }
+            if (end_with == 1) {
+                after->prev = l1_tail;
+                l1_tail->next = after;
+            } else {
+                after->prev = l2_tail;
+                l2_tail->next = after;
+            }
 
-        if (descend) {
-            max_node->next = head;
-            max_node->prev = head->prev;
-            head->prev->next = max_node;
-            head->prev = max_node;
-        } else {
-            max_node->prev = head;
-            max_node->next = head->next;
-            head->next->prev = max_node;
-            head->next = max_node;
+            // prepare next loop
+            before = after->prev;
         }
     }
+    struct list_head *node;
+    for (node = head; node->next; node = node->next)
+        ;
+    node->next = head;
+    head->prev = node;
 }
 
 /* Remove every node which has a node with a strictly less value anywhere to
