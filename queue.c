@@ -224,6 +224,8 @@ void q_swap(struct list_head *head)
 /* Reverse elements in queue */
 void q_reverse(struct list_head *head)
 {
+    if (!head || list_empty(head))
+        return;
     struct list_head *node, *safe, *tmp;
     list_for_each_safe (node, safe, head) {
         tmp = node->next;
@@ -239,7 +241,7 @@ void q_reverse(struct list_head *head)
 void q_reverseK(struct list_head *head, int k)
 {
     // https://leetcode.com/problems/reverse-nodes-in-k-group/
-    if (k <= 0) {
+    if (k <= 0 || !head || list_empty(head)) {
         return;
     }
     int end = 0;
